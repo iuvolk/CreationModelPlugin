@@ -9,7 +9,7 @@ namespace CreationModelPlugin
 {
     public class WallsUtils
     {
-        public static void AddWall(Document doc, Level level1, Level level2)
+        public static List<Wall> AddWall(Document doc, Level level1, Level level2)
         {
             double width = UnitUtils.ConvertToInternalUnits(10000, UnitTypeId.Millimeters);
             double depth = UnitUtils.ConvertToInternalUnits(5000, UnitTypeId.Millimeters);
@@ -33,6 +33,9 @@ namespace CreationModelPlugin
                 walls.Add(wall);
                 wall.get_Parameter(BuiltInParameter.WALL_HEIGHT_TYPE).Set(level2.Id);
             }
+
+            return walls;
         }
+
     }
 }

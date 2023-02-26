@@ -20,13 +20,20 @@ namespace CreationModelPlugin
             List<Level> listLevel = LevelUtils.GetLevels(doc);
             Level level1 = LevelUtils.GetLevelByName(doc, "Уровень 1");
             Level level2 = LevelUtils.GetLevelByName(doc, "Уровень 2");
-
+            
 
             Transaction transaction = new Transaction(doc, "Create model");
             transaction.Start();
 
-            WallsUtils.AddWall(doc, level1, level2);
+            var walls = WallsUtils.AddWall(doc, level1, level2);
+            
+            AddDoor(doc, level1, walls[0]);
 
+            for (int i = 1; i < walls.Count; i++)
+            {
+                AddWindows(doc, level1, walls[i]);
+            }
+            
             transaction.Commit();
 
             
@@ -78,7 +85,49 @@ namespace CreationModelPlugin
 
             return Result.Succeeded;
         }
+
+        private void AddDoor(Document doc, Level level1, Wall wall)
+        {
+           FamilySymbol doorType = new FilteredElementCollector(doc)
+                .OfClass(typeof(FamilySymbol))
+                .OfCategory(BuiltInCategory.OST_Doors)
+                .OfType<FamilySymbol>()
+                .Where(x => x.Name.Equals("0915 x 2134 мм"))
+                .Where(x => x.FamilyName.Equals("Одиночные-Щитовые"))
+                .FirstOrDefault();
+
+            LocationCurve hostCurve = wall.Location as LocationCurve;
+            XYZ point1 = hostCurve.Curve.GetEndPoint(0);
+            XYZ point2 = hostCurve.Curve.GetEndPoint(1);
+            XYZ point = (point1 + point2) / 2;
+
+            if(!doorType.IsActive)
+                doorType.Activate();
+
+            doc.Create.NewFamilyInstance(point, doorType, wall, level1, Autodesk.Revit.DB.Structure.StructuralType.NonStructural);
+        }
         
+        private void AddWindows(Document doc, Level level1, Wall wall)
+        {
+            FamilySymbol windowType = new FilteredElementCollector(doc)
+                 .OfClass(typeof(FamilySymbol))
+                 .OfCategory(BuiltInCategory.OST_Windows)
+                 .OfType<FamilySymbol>()
+                 .Where(x => x.Name.Equals("0406 x 0610 мм"))
+                 .Where(x => x.FamilyName.Equals("Фиксированные"))
+                 .FirstOrDefault();
+
+            LocationCurve hostCurve = wall.Location as LocationCurve;
+            XYZ point1 = hostCurve.Curve.GetEndPoint(0);
+            XYZ point2 = hostCurve.Curve.GetEndPoint(1);
+            XYZ point = (point1 + point2) / 2;
+
+            if (!windowType.IsActive)
+                windowType.Activate();
+
+            var window = doc.Create.NewFamilyInstance(point, windowType, wall, level1, Autodesk.Revit.DB.Structure.StructuralType.NonStructural);
+            window.get_Parameter(BuiltInParameter.INSTANCE_SILL_HEIGHT_PARAM).Set(6);
+        }
     }
 
 }
